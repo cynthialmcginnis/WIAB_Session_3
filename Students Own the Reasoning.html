@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Students Own the Reasoning</title>
+<style>
+  /* Layout: one reading column. Five flip boxes for the showcase, then the two prompts as copyable blocks. */
+  :root {
+    --bg: #FFFFFF; --fg: #16233A; --muted: #46505F; --accent: #B23A22; --on-accent: #FFFFFF;
+    --surface: #F4F1EA; --surface-hover: #ECE7DB; --line: #DDD5C3;
+    --panel: #16233A; --panel-fg: #FFFFFF; --panel-label: #F2A488; --panel-muted: #C9D2DF;
+    --serif: Cambria, Georgia, "Times New Roman", serif;
+    --sans: Calibri, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: "Courier New", Courier, monospace;
+    --gap: clamp(12px, 1.6vw, 22px);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #10192A; --fg: #EEF1F6; --muted: #B4BECD; --accent: #F2A488; --on-accent: #16233A;
+    --surface: #1C2942; --surface-hover: #243453; --line: #34435C;
+    --panel: #F4F1EA; --panel-fg: #16233A; --panel-label: #B23A22; --panel-muted: #46505F; color-scheme: dark } }
+  :root[data-theme="dark"] {
+    --bg: #10192A; --fg: #EEF1F6; --muted: #B4BECD; --accent: #F2A488; --on-accent: #16233A;
+    --surface: #1C2942; --surface-hover: #243453; --line: #34435C;
+    --panel: #F4F1EA; --panel-fg: #16233A; --panel-label: #B23A22; --panel-muted: #46505F; color-scheme: dark }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 18px; line-height: 1.5; }
+  main { max-width: 1180px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 48px); padding-block: clamp(20px, 4vh, 48px); display: flex; flex-direction: column; gap: 28px; }
+  section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .eyebrow { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+  h1 { margin: 4px 0 0; font-family: var(--serif); font-size: clamp(32px, 5vw, 54px); line-height: 1.1; text-wrap: balance; }
+  .question { margin: 8px 0 0; font-family: var(--serif); font-size: clamp(19px, 2.4vw, 27px); line-height: 1.3; color: var(--accent); text-wrap: balance; }
+  h2 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 3vw, 32px); line-height: 1.2; text-wrap: balance; }
+  p { margin: 0; max-width: 68ch; }
+  .muted { color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 10px; }
+  nav a { color: var(--fg); font-weight: 700; text-decoration: none; padding: 8px 14px; border: 2px solid var(--line); border-radius: 10px; }
+  nav a:hover { background: var(--surface); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+  .btn { font: inherit; font-weight: 700; font-size: 16px; min-height: 44px; padding: 8px 18px; border-radius: 10px; border: 2px solid var(--panel); background: var(--bg); color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--panel); color: var(--panel-fg); }
+  .btn:hover { background: var(--surface); }
+  .btn.primary:hover { opacity: 0.88; background: var(--panel); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .progress { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--muted); }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
+  .dot.on { background: var(--accent); }
+
+  .grid { display: grid; gap: var(--gap); }
+  .lead { grid-template-columns: 1fr 2fr; }
+  .rest { grid-template-columns: repeat(3, 1fr); }
+  .card { appearance: none; border: 0; padding: 0; margin: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; perspective: 1200px; display: block; width: 100%; height: 250px; min-width: 0; }
+  .inner { position: relative; display: block; width: 100%; height: 100%; transition: transform 0.55s ease; transform-style: preserve-3d; }
+  .card[aria-pressed="true"] .inner { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 22px 22px 46px; border-radius: 14px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+  .front { background: var(--surface); }
+  .card:hover .front { background: var(--surface-hover); }
+  .back { background: var(--panel); color: var(--panel-fg); transform: rotateY(180deg); }
+  .card:focus-visible { outline: none; }
+  .card:focus-visible .face { box-shadow: 0 0 0 4px var(--accent); }
+  .head { display: flex; align-items: center; gap: 12px; }
+  .num { width: 42px; height: 42px; border-radius: 50%; background: var(--panel); color: var(--panel-fg); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+  .name { font-family: var(--serif); font-weight: 700; font-size: clamp(20px, 2.2vw, 26px); line-height: 1.15; }
+  .teaser { color: var(--muted); font-size: 17px; }
+  .label { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--panel-label); }
+  .desc { font-size: 17px; line-height: 1.4; }
+  .steps { display: flex; flex-direction: column; gap: 5px; font-size: 16px; line-height: 1.35; }
+  .steps b { color: var(--panel-label); }
+  .action { position: absolute; left: 22px; right: 22px; bottom: 14px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; }
+  .front .action { color: var(--accent); }
+  .back .action { color: var(--panel-muted); }
+  .seen { color: var(--muted); font-weight: 400; visibility: hidden; }
+  .card.viewed .seen { visibility: visible; }
+
+  .prompt { background: var(--surface); border-radius: 14px; padding: 18px 20px; overflow-x: auto; min-width: 0; }
+  .prompt pre { margin: 0; font-family: var(--mono); font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg); }
+  .status { font-size: 15px; font-weight: 700; color: var(--accent); min-height: 1.4em; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 16px; }
+  th { text-align: left; background: var(--panel); color: var(--panel-fg); padding: 10px 12px; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { font-weight: 700; white-space: nowrap; }
+  ol.moves { margin: 0; padding-left: 1.3em; max-width: 68ch; display: flex; flex-direction: column; gap: 6px; }
+  ul.dl { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+  ul.dl a { color: var(--accent); font-weight: 700; }
+  footer { border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 16px; }
+  .addr { font-family: var(--mono); color: var(--fg); user-select: all; }
+
+  @media (max-width: 900px) { .lead, .rest { grid-template-columns: 1fr; } .lead .card:last-child, .lead > .card + .card { height: 400px; } }
+  @media (prefers-reduced-motion: reduce) { .inner { transition: none; } }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <p class="eyebrow">Faculty GenAI Showcase · Supplemental materials</p>
+    <h1>Students own the reasoning</h1>
+    <p class="question">How can GenAI build a dataset students care about, while they analyze it without GenAI?</p>
+    <p class="muted" style="margin-top:10px">Cy McGinnis, Associate Professor of Mathematics and Computer Science, UMGC Asia</p>
+  </header>
+
+  <nav aria-label="On this page">
+    <a href="#showcase">The showcase</a>
+    <a href="#assignment">The assignment</a>
+    <a href="#statistics">Statistics prompt</a>
+    <a href="#anydiscipline">Prompt for any discipline</a>
+    <a href="#downloads">Downloads</a>
+  </nav>
+
+  <section id="showcase">
+    <div class="bar">
+      <h2>The showcase in five parts</h2>
+      <div class="controls">
+        <div class="progress"><div class="dots" id="dots" aria-hidden="true"></div><span id="count" aria-live="polite">0 of 5 opened</span></div>
+        <button type="button" class="btn primary" id="showAll">Open all</button>
+        <button type="button" class="btn" id="reset">Start over</button>
+      </div>
+    </div>
+    <p class="muted">Select a box to see the details.</p>
+
+    <div class="grid lead">
+      <button class="card" type="button" aria-pressed="false">
+        <span class="inner">
+          <span class="face front">
+            <span class="head"><span class="num">1</span><span class="name">Problem of Practice</span></span>
+            <span class="teaser">Textbook data means little to students</span>
+            <span class="action"><span>See details &#8594;</span><span class="seen">&#10003; Viewed</span></span>
+          </span>
+          <span class="face back" aria-hidden="true">
+            <span class="label">1 · Problem of practice</span>
+            <span class="desc">Students lack a connection to the datasets in a textbook. How can GenAI build a dataset students care about, while they analyze it without GenAI?</span>
+            <span class="action"><span>&#8592; Back</span></span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button" aria-pressed="false">
+        <span class="inner">
+          <span class="face front">
+            <span class="head"><span class="num">2</span><span class="name">GenAI Teaching Practice</span></span>
+            <span class="teaser">Story &#8594; Dataset &#8594; Analysis &#8594; Mastery</span>
+            <span class="action"><span>See details &#8594;</span><span class="seen">&#10003; Viewed</span></span>
+          </span>
+          <span class="face back" aria-hidden="true">
+            <span class="label">2 · GenAI teaching practice</span>
+            <span class="steps">
+              <span><b>1 Story.</b> Students choose a story or interest, write at least four questions, and create the variables.</span>
+              <span><b>2 Dataset.</b> Students paste a fill-in prompt into any GenAI tool. GenAI returns invented data. Students critique it.</span>
+              <span><b>3 Analysis.</b> Students analyze the data in Statdisk, with no GenAI.</span>
+              <span><b>4 Mastery.</b> Students write a report and give an oral presentation.</span>
+            </span>
+            <span class="action"><span>&#8592; Back</span></span>
+          </span>
+        </span>
+      </button>
+    </div>
+
+    <div class="grid rest">
+      <button class="card" type="button" aria-pressed="false">
+        <span class="inner">
+          <span class="face front">
+            <span class="head"><span class="num">3</span><span class="name">Student-Learning Purpose</span></span>
+            <span class="teaser">Why GenAI takes the data step</span>
+            <span class="action"><span>See details &#8594;</span><span class="seen">&#10003; Viewed</span></span>
+          </span>
+          <span class="face back" aria-hidden="true">
+            <span class="label">3 · Student-learning purpose</span>
+            <span class="desc">Collecting data is not what I am teaching. Interpreting it is. GenAI takes the first step and students keep the second. Presenting aloud shows they understand.</span>
+            <span class="action"><span>&#8592; Back</span></span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button" aria-pressed="false">
+        <span class="inner">
+          <span class="face front">
+            <span class="head"><span class="num">4</span><span class="name">Evidence or Observations</span></span>
+            <span class="teaser">What happened, and what was hard</span>
+            <span class="action"><span>See details &#8594;</span><span class="seen">&#10003; Viewed</span></span>
+          </span>
+          <span class="face back" aria-hidden="true">
+            <span class="label">4 · Evidence or observations</span>
+            <span class="desc">More interest, engagement, and conversation. Hard: unequal access. Some students only have Copilot, some pay for GenAI, some fear it. Instructor observation so far.</span>
+            <span class="action"><span>&#8592; Back</span></span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button" aria-pressed="false">
+        <span class="inner">
+          <span class="face front">
+            <span class="head"><span class="num">5</span><span class="name">Adaptation Potential</span></span>
+            <span class="teaser">What other faculty can reuse</span>
+            <span class="action"><span>See details &#8594;</span><span class="seen">&#10003; Viewed</span></span>
+          </span>
+          <span class="face back" aria-hidden="true">
+            <span class="label">5 · Adaptation potential</span>
+            <span class="desc">Students author the context. GenAI makes the raw material. Students reason without GenAI. The fill-in prompt can be rewritten for any discipline.</span>
+            <span class="action"><span>&#8592; Back</span></span>
+          </span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <section id="assignment">
+    <h2>The assignment students receive</h2>
+    <p>In this project students study questions they care about. They choose the story. GenAI builds the data. They do the statistics. They work in groups.</p>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Stage</th><th>What students do</th><th>GenAI</th></tr>
+        <tr><td>1. Story</td><td>Choose a story or area of interest and describe it in 2 to 4 sentences. Write at least 4 questions. Create at least 2 numeric variables, 2 qualitative variables, and 1 binary variable. Choose variables that can be compared between groups.</td><td>Their own work</td></tr>
+        <tr><td>2. Dataset</td><td>Fill in the prompt and paste it into any GenAI tool. Save the completed prompt and the Excel file GenAI returns. Critique the dataset. Is it plausible? What did GenAI get wrong? Which assumptions do they disagree with?</td><td>With GenAI</td></tr>
+        <tr><td>3. Analysis</td><td>Open the Excel file and copy the data into Statdisk. State two hypotheses, one about one population and one comparing two populations. Test both.</td><td>Without GenAI</td></tr>
+        <tr><td>4. Mastery</td><td>Write a report that shows they understand the statistics. Give an oral presentation to the class.</td><td>Their own work</td></tr>
+      </table>
+    </div>
+    <p class="muted">All data is invented. Students do not use real personal data.</p>
+  </section>
+
+  <section id="statistics">
+    <div class="bar">
+      <h2>The student prompt for statistics</h2>
+      <button type="button" class="btn primary copy" data-target="p1" data-status="s1">Copy prompt</button>
+    </div>
+    <p>Students fill in the brackets, then paste the whole prompt into any GenAI tool. They need at least four questions, two numeric variables, two qualitative variables, and one binary variable.</p>
+    <p class="status" id="s1" aria-live="polite"></p>
+    <div class="prompt"><pre id="p1">I am a statistics student. I need a realistic, made-up dataset for a class project. I will do all of the analysis myself.
+
+MY STORY OR AREA OF INTEREST
+[Describe your story or interest in 2 to 4 sentences.]
+
+MY QUESTIONS (at least 4)
+1. [Question]
+2. [Question]
+3. [Question]
+4. [Question]
+[Add more if you have them.]
+
+MY VARIABLES
+Numeric (at least 2)
+- [Variable name] : [units]
+- [Variable name] : [units]
+Qualitative (at least 2)
+- [Variable name] : [list the categories]
+- [Variable name] : [list the categories]
+Binary (at least 1)
+- [Variable name] : [the two values, for example yes / no]
+[Add more lines to any group if needed.]
+
+SAMPLE SIZE
+[Number of rows, for example 40]
+
+YOUR TASK
+1. Create a dataset that fits my story, with one row per individual and one column for each variable I listed. Do not add or remove variables.
+2. Make the data usable for comparisons. Put enough rows in each value of the binary variable and each category of the qualitative variables that I can compare the numeric variables between groups.
+3. Make the values realistic. Include natural variation. Do not make the data too clean.
+4. Do not build in a result. Differences between groups may be large, small, or absent.
+5. All data must be invented. Do not use real people or real records.
+6. Give me the data as an Excel file (.xlsx) that I can download, with one sheet and a header row. If you cannot create a file, give me the data as a table that I can copy and paste into Excel.
+7. After the data, list the assumptions you made to create it, in 3 to 5 short bullet points.
+8. I may come back later in the course and ask for more rows or new variables for this same story. When I do, keep the same variable names, units, categories, and format so the new data fits with this dataset.
+
+DO NOT
+- Do not calculate any statistics.
+- Do not run any tests.
+- Do not interpret the data or tell me what it shows.</pre></div>
+  </section>
+
+  <section id="anydiscipline">
+    <div class="bar">
+      <h2>The prompt for any discipline</h2>
+      <button type="button" class="btn primary copy" data-target="p2" data-status="s2">Copy prompt</button>
+    </div>
+    <p>The pattern has three moves.</p>
+    <ol class="moves">
+      <li><b>Students author the context.</b> They choose the topic, write the questions, and decide what the material must include.</li>
+      <li><b>GenAI makes the raw material.</b> A dataset, a case, a set of documents. Everything is invented.</li>
+      <li><b>Students do the reasoning without GenAI.</b> They analyze, judge, and explain.</li>
+    </ol>
+    <p>You fill in the blanks in CAPITALS once for each assignment. Students fill in the rest.</p>
+    <p class="status" id="s2" aria-live="polite"></p>
+    <div class="prompt"><pre id="p2">I am a student in [COURSE OR DISCIPLINE]. I need realistic, made-up material for a class project. I will do all of the analysis and reasoning myself.
+
+MY TOPIC OR STORY
+[Describe your topic, story, or area of interest in 2 to 4 sentences.]
+
+MY QUESTIONS (at least [NUMBER])
+1. [Question you want to explore]
+2. [Question]
+3. [Question]
+[Add more if you have them.]
+
+WHAT THE MATERIAL MUST INCLUDE
+- [Element you chose, and any details about it]
+- [Element]
+- [Element]
+[Add more lines if needed.]
+
+YOUR TASK
+1. Create [TYPE OF MATERIAL] that fits my topic and includes every element I listed. Do not add or remove elements.
+2. Make it realistic. Include the kind of detail, variation, and imperfection that real material of this type would have.
+3. Do not build in an answer. The material may support more than one conclusion.
+4. Everything must be invented. Do not use real people, real organizations, or real records.
+5. Give me the material in this format: [FORMAT].
+6. After the material, list the assumptions you made to create it, in 3 to 5 short bullet points.
+7. I may come back later and ask for more material on this same topic. When I do, keep it consistent with what you created here.
+
+DO NOT
+- Do not [THE REASONING STUDENTS MUST DO THEMSELVES].
+- Do not interpret the material or tell me what it shows.
+- Do not answer my questions.</pre></div>
+
+    <h2 style="margin-top:10px">Examples of the instructor blanks</h2>
+    <p class="muted">The statistics row is in use in my course. The other rows are starting points for you to adapt.</p>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Discipline</th><th>Type of material</th><th>Format</th><th>The reasoning students must do themselves</th></tr>
+        <tr><td>Statistics</td><td>a dataset, one row per individual</td><td>an Excel file</td><td>calculate statistics or run tests</td></tr>
+        <tr><td>Nursing</td><td>a patient case with history, vitals, and labs</td><td>a chart-style summary</td><td>state a diagnosis, set priorities, or recommend care</td></tr>
+        <tr><td>History</td><td>three short primary-source documents from different viewpoints</td><td>plain text, each labeled with author and date</td><td>judge the reliability of the sources or say what happened</td></tr>
+        <tr><td>Business</td><td>a company profile with two years of financial figures</td><td>a short memo and a table</td><td>evaluate the company or recommend a decision</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="downloads">
+    <h2>Downloads</h2>
+    <ul class="dl">
+      <li><a href="Statistics_Story_Project_Assignment.docx">Statistics Story Project assignment</a> (Word)</li>
+      <li><a href="Fill-In_Prompt_for_Any_Discipline.docx">Fill-in prompt for any discipline, with worksheet</a> (Word)</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Questions about this practice: <span class="addr">cynthia.mcginnis@umgc.edu</span></p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var dotsBox = document.getElementById('dots');
+  var count = document.getElementById('count');
+  var dots = cards.map(function () { var d = document.createElement('span'); d.className = 'dot'; dotsBox.appendChild(d); return d; });
+  function isOpen(c) { return c.getAttribute('aria-pressed') === 'true'; }
+  function update() {
+    var n = 0;
+    cards.forEach(function (c, i) { var seen = c.classList.contains('viewed'); dots[i].classList.toggle('on', seen); if (seen) { n++; } });
+    count.textContent = n + ' of ' + cards.length + ' opened';
+  }
+  function setOpen(c, open) {
+    c.setAttribute('aria-pressed', open ? 'true' : 'false');
+    c.querySelector('.front').setAttribute('aria-hidden', open ? 'true' : 'false');
+    c.querySelector('.back').setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) { c.classList.add('viewed'); }
+    update();
+  }
+  cards.forEach(function (c) { c.addEventListener('click', function () { setOpen(c, !isOpen(c)); }); });
+  document.getElementById('showAll').addEventListener('click', function () { cards.forEach(function (c) { setOpen(c, true); }); });
+  document.getElementById('reset').addEventListener('click', function () { cards.forEach(function (c) { setOpen(c, false); c.classList.remove('viewed'); }); update(); });
+
+  function selectText(el) {
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.copy'), function (btn) {
+    btn.addEventListener('click', function () {
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      var status = document.getElementById(btn.getAttribute('data-status'));
+      function fallback() { selectText(el); status.textContent = 'The prompt is selected. Press Ctrl+C or Cmd+C to copy it.'; }
+      try {
+        navigator.clipboard.writeText(el.textContent).then(function () { status.textContent = 'Copied. Paste it into your GenAI tool.'; }, fallback);
+      } catch (e) { fallback(); }
+    });
+  });
+  update();
+})();
+</script>
+</body>
+</html>
