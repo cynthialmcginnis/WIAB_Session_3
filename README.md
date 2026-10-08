@@ -12,4 +12,4 @@ Students choose a story, GenAI builds an invented dataset, and students analyze 
 
 ## View the page
 
-https://cynthialmcginnis.github.io/students-own-the-reasoning/
+https://cynthialmcginnis.github.io/WIAB_Session_3/
